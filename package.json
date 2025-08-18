@@ -1,0 +1,23 @@
+{
+  "name": "whatsapp-paircode-server",
+  "version": "1.0.0",
+  "description": "A standalone server for generating a WhatsApp pair code.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "baileys",
+    "paircode",
+    "server"
+  ],
+  "author": "Nix",
+  "license": "ISC",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.6.0",
+    "express": "^4.18.2",
+    "@hapi/boom": "^10.0.1",
+    "pino": "^8.16.1"
+  }
+}
