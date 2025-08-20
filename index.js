@@ -2,10 +2,11 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const fs = require('fs').promises;
-const { default: makeWASocket, useMultiFileAuthState, Browsers, is=jid, generateWAMessageFromContent } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 
-const sessionPath = path.join('/cookies');
+const PORT = process.env.PORT || 3000; // Render এ PORT env থাকে, লোকালি 3000
+const sessionPath = path.join(__dirname, 'cookies'); // __dirname ব্যবহার করো
 
 app.use(express.json());
 
@@ -18,7 +19,7 @@ app.post('/api/paircode', async (req, res) => {
 
     try {
         await fs.mkdir(sessionPath, { recursive: true });
-        const pairCode = await generatePairCode(phoneNumber, res);
+        const pairCode = await generatePairCode(phoneNumber);
         res.status(200).json({ success: true, pairCode });
     } catch (err) {
         console.error("Error generating pair code:", err);
@@ -26,9 +27,7 @@ app.post('/api/paircode', async (req, res) => {
     }
 });
 
-module.exports = app;
-
-async function generatePairCode(phoneNumber, res) {
+async function generatePairCode(phoneNumber) {
     const isExistingSession = await fs.access(path.join(sessionPath, 'creds.json'))
         .then(() => true)
         .catch(() => false);
@@ -38,7 +37,6 @@ async function generatePairCode(phoneNumber, res) {
     }
     
     const formattedNumber = phoneNumber.startsWith('880') ? phoneNumber : '880' + phoneNumber;
-    
     console.log(`Generating pair code for number: ${formattedNumber}`);
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
@@ -51,10 +49,9 @@ async function generatePairCode(phoneNumber, res) {
     const pairCode = await tempSock.requestPairingCode(formattedNumber);
     
     tempSock.ev.on('connection.update', async (update) => {
-        const { connection, qr } = update;
+        const { connection } = update;
         if (connection === 'open') {
             console.log("Pairing successful! Creds.json saved.");
-            // Send the creds.json file content as a message to the user
             await sendCredsToWhatsApp(tempSock, formattedNumber);
             tempSock.end();
         } else if (connection === 'close') {
@@ -73,11 +70,14 @@ async function sendCredsToWhatsApp(sock, jid) {
         const creds = await fs.readFile(credsFilePath, 'utf-8');
         const message = "Here is your creds.json content:\n\n```json\n" + creds + "\n```";
 
-        await sock.sendMessage(jid + "@s.whatsapp.net", {
-            text: message
-        });
+        await sock.sendMessage(jid + "@s.whatsapp.net", { text: message });
         console.log("creds.json content sent successfully to the user's number.");
     } catch (error) {
         console.error("Failed to send creds.json content to WhatsApp:", error);
     }
 }
+
+// Render / Local server run
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
