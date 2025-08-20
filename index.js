@@ -6,16 +6,12 @@ const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whi
 const pino = require('pino');
 
 const PORT = process.env.PORT || 3000;
-const sessionPath = path.join(__dirname, 'cookies');
+// Use /tmp for writable storage in serverless environments
+const sessionPath = path.join('/tmp', 'cookies'); 
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// New route to serve paircode.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'paircode.html'));
-});
 
 // API: Generate Pair Code
 app.post('/api/paircode', async (req, res) => {
