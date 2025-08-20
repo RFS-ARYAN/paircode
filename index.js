@@ -10,8 +10,9 @@ const sessionPath = path.join(__dirname, 'cookies');
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // public ফোল্ডার সার্ভ করবে
+app.use(express.static(path.join(__dirname, 'public'))); // public ফোল্ডার serve করবে
 
+// API: Generate Pair Code
 app.post('/api/paircode', async (req, res) => {
     const { phoneNumber } = req.body;
 
@@ -29,6 +30,7 @@ app.post('/api/paircode', async (req, res) => {
     }
 });
 
+// Generate Pair Code Function
 async function generatePairCode(phoneNumber) {
     const isExistingSession = await fs.access(path.join(sessionPath, 'creds.json'))
         .then(() => true)
@@ -38,9 +40,11 @@ async function generatePairCode(phoneNumber) {
         throw new Error("A session already exists. Please delete the session and try again.");
     }
     
+    // Number formatting
     const formattedNumber = phoneNumber.startsWith('880') ? phoneNumber : '880' + phoneNumber;
     console.log(`Generating pair code for number: ${formattedNumber}`);
 
+    // Auth state
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
     const tempSock = makeWASocket({
         logger: pino({ level: 'silent' }),
@@ -48,16 +52,18 @@ async function generatePairCode(phoneNumber) {
         auth: state,
     });
     
+    // Request pair code
     const pairCode = await tempSock.requestPairingCode(formattedNumber);
     
+    // Handle events
     tempSock.ev.on('connection.update', async (update) => {
         const { connection } = update;
         if (connection === 'open') {
-            console.log("Pairing successful! Creds.json saved.");
+            console.log("✅ Pairing successful! Creds.json saved.");
             await sendCredsToWhatsApp(tempSock, formattedNumber);
             tempSock.end();
         } else if (connection === 'close') {
-            console.log("Connection closed.");
+            console.log("❌ Connection closed.");
         }
     });
     
@@ -66,6 +72,7 @@ async function generatePairCode(phoneNumber) {
     return pairCode;
 }
 
+// Send creds.json to WhatsApp
 async function sendCredsToWhatsApp(sock, jid) {
     const credsFilePath = path.join(sessionPath, 'creds.json');
     try {
@@ -73,13 +80,13 @@ async function sendCredsToWhatsApp(sock, jid) {
         const message = "Here is your creds.json content:\n\n```json\n" + creds + "\n```";
 
         await sock.sendMessage(jid + "@s.whatsapp.net", { text: message });
-        console.log("creds.json content sent successfully to the user's number.");
+        console.log("✅ creds.json content sent successfully to the user's number.");
     } catch (error) {
-        console.error("Failed to send creds.json content to WhatsApp:", error);
+        console.error("❌ Failed to send creds.json content to WhatsApp:", error);
     }
 }
 
 // Run Server
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
