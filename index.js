@@ -10,7 +10,12 @@ const sessionPath = path.join(__dirname, 'cookies');
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // public ফোল্ডার serve করবে
+app.use(express.static(path.join(__dirname, 'public')));
+
+// New route to serve paircode.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'paircode.html'));
+});
 
 // API: Generate Pair Code
 app.post('/api/paircode', async (req, res) => {
