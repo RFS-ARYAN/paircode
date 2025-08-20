@@ -6,14 +6,14 @@ const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whi
 const pino = require('pino');
 
 const PORT = process.env.PORT || 3000;
-// Use /tmp for writable storage in serverless environments
+// Vercel-এর মতো প্ল্যাটফর্মে ফাইল লেখার জন্য /tmp ব্যবহার করা আবশ্যক
 const sessionPath = path.join('/tmp', 'cookies'); 
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// New route to serve paircode.html at the root URL
+// paircode.html ফাইলটি সার্ভ করা হচ্ছে
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'paircode.html'));
 });
@@ -28,55 +28,56 @@ app.post('/api/paircode', async (req, res) => {
 
     try {
         await fs.mkdir(sessionPath, { recursive: true });
-        const pairCode = await generatePairCode(phoneNumber);
-        res.status(200).json({ success: true, pairCode });
+        
+        const isExistingSession = await fs.access(path.join(sessionPath, 'creds.json'))
+            .then(() => true)
+            .catch(() => false);
+
+        if (isExistingSession) {
+            throw new Error("A session already exists. Please delete the session and try again.");
+        }
+        
+        // নাম্বার ফরম্যাটিং: 880 যোগ করা
+        const formattedNumber = phoneNumber.startsWith('880') ? phoneNumber : '880' + phoneNumber;
+        
+        // Auth state
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+        
+        const tempSock = makeWASocket({
+            logger: pino({ level: 'silent' }),
+            browser: Browsers.macOS('Chrome'),
+            auth: state,
+        });
+        
+        // Request pair code
+        const pairCode = await tempSock.requestPairingCode(formattedNumber);
+        
+        // Handle events
+        tempSock.ev.on('connection.update', async (update) => {
+            const { connection } = update;
+            if (connection === 'open') {
+                console.log("✅ Pairing successful! Creds.json saved.");
+                await sendCredsToWhatsApp(tempSock, formattedNumber);
+                tempSock.end();
+            } else if (connection === 'close') {
+                console.log("❌ Connection closed.");
+            }
+        });
+        
+        tempSock.ev.on('creds.update', saveCreds);
+        
+        // সফলভাবে কোড তৈরি হলে pairCode এবং মেসেজ পাঠানো
+        res.status(200).json({ 
+            success: true, 
+            pairCode: pairCode,
+            message: "Pair code generated successfully. Enter this code in your WhatsApp app." 
+        });
+
     } catch (err) {
         console.error("Error generating pair code:", err);
         res.status(500).json({ error: err.message || 'Failed to generate pair code.' });
     }
 });
-
-// Generate Pair Code Function
-async function generatePairCode(phoneNumber) {
-    const isExistingSession = await fs.access(path.join(sessionPath, 'creds.json'))
-        .then(() => true)
-        .catch(() => false);
-
-    if (isExistingSession) {
-        throw new Error("A session already exists. Please delete the session and try again.");
-    }
-    
-    // Number formatting
-    const formattedNumber = phoneNumber.startsWith('880') ? phoneNumber : '880' + phoneNumber;
-    console.log(`Generating pair code for number: ${formattedNumber}`);
-
-    // Auth state
-    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-    const tempSock = makeWASocket({
-        logger: pino({ level: 'silent' }),
-        browser: Browsers.macOS('Chrome'),
-        auth: state,
-    });
-    
-    // Request pair code
-    const pairCode = await tempSock.requestPairingCode(formattedNumber);
-    
-    // Handle events
-    tempSock.ev.on('connection.update', async (update) => {
-        const { connection } = update;
-        if (connection === 'open') {
-            console.log("✅ Pairing successful! Creds.json saved.");
-            await sendCredsToWhatsApp(tempSock, formattedNumber);
-            tempSock.end();
-        } else if (connection === 'close') {
-            console.log("❌ Connection closed.");
-        }
-    });
-    
-    tempSock.ev.on('creds.update', saveCreds);
-    
-    return pairCode;
-}
 
 // Send creds.json to WhatsApp
 async function sendCredsToWhatsApp(sock, jid) {
@@ -96,3 +97,4 @@ async function sendCredsToWhatsApp(sock, jid) {
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
