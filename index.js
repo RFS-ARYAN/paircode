@@ -5,10 +5,12 @@ const fs = require('fs').promises;
 const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 
-const PORT = process.env.PORT || 3000; // Render এ PORT env থাকে, লোকালি 3000
-const sessionPath = path.join(__dirname, 'cookies'); // __dirname ব্যবহার করো
+const PORT = process.env.PORT || 3000;
+const sessionPath = path.join(__dirname, 'cookies');
 
+// Middleware
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public'))); // public ফোল্ডার সার্ভ করবে
 
 app.post('/api/paircode', async (req, res) => {
     const { phoneNumber } = req.body;
@@ -77,7 +79,7 @@ async function sendCredsToWhatsApp(sock, jid) {
     }
 }
 
-// Render / Local server run
+// Run Server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
