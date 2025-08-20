@@ -1,59 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bot Login - Pair Code</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>WhatsApp Pair Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; font-family: Arial, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); text-align: center; }
-        h1 { color: #1a1a1a; margin-bottom: 1rem; }
-        form { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
-        input { padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; width: 80%; max-width: 300px; }
-        button { padding: 0.75rem 1.5rem; background-color: #25d366; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-        #pairCodeDisplay { margin-top: 1.5rem; display: none; }
-        #pairCodeText { font-size: 2rem; color: #1a1a1a; }
-        p { color: #555; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 1.2s ease-out forwards;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slideInUp {
+            animation: slideInUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        .option-card {
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .option-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>WhatsApp Bot Login</h1>
-        <p>Enter your phone number to get a pair code.</p>
-        <form id="pairCodeForm">
-            <input type="text" id="phoneNumberInput" placeholder="e.g. 8801xxxxxxxxx" required>
-            <button type="submit">Get Pair Code</button>
-        </form>
-        <div id="pairCodeDisplay">
-            <p>Your Pair Code is:</p>
-            <h2 id="pairCodeText"></h2>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center px-4 py-8 font-sans">
+
+    <main class="w-full max-w-4xl flex-grow flex flex-col justify-center items-center">
+
+        <div id="homePage" class="w-full max-w-2xl text-center animate-fadeIn">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-600 tracking-tight leading-none mb-12">
+                Whatsapp Bot
+            </h1>
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <button onclick="showPage('paircodePage')" class="option-card flex flex-col items-center p-6 bg-gray-700 rounded-xl hover:bg-green-600 group">
+                        <svg class="w-16 h-16 mb-4 text-green-400 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.0007 2.00008C6.48625 2.00008 2.00073 6.48559 2.00073 12.0001C2.00073 13.7844 2.45664 15.4859 3.26442 17.0001L2.00073 22.0001L7.10899 20.7513C8.61863 21.503 10.2801 22.0001 12.0007 22.0001C17.5152 22.0001 22.0007 17.5146 22.0007 12.0001C22.0007 6.48559 17.5152 2.00008 12.0007 2.00008ZM16.4952 14.7397C16.3217 15.0001 16.1482 15.2605 15.9747 15.5209C15.7505 15.8643 15.5264 16.2077 15.3023 16.5511C15.0211 16.8945 14.6294 17.1549 14.1537 17.3486C13.6781 17.5423 13.1165 17.6391 12.5549 17.6391C11.9933 17.6391 11.4317 17.6391 10.8701 17.5423C10.3085 17.4455 9.74693 17.2046 9.27129 16.8612C8.79565 16.5178 8.40393 16.077 8.01221 15.5346C7.62049 14.9922 7.33932 14.3481 7.16584 13.7041C6.9417 13.1617 6.71756 12.5176 6.71756 11.8736C6.71756 11.2295 6.71756 10.5855 7.00696 9.94145C7.29636 9.29742 7.74205 8.75501 8.21769 8.31422C8.69333 7.87342 9.16901 7.63255 9.73057 7.53572C10.2921 7.43888 10.8537 7.43888 11.4153 7.53572C11.9768 7.63255 12.5384 7.77727 13.0141 8.01815C13.4897 8.25902 13.9846 8.59998 14.4602 8.94332C14.9358 9.28666 15.2829 9.68261 15.5723 10.1706C15.8617 10.6585 16.0352 11.1916 16.0352 11.7247C16.0352 12.2578 15.9181 12.7909 15.6888 13.324C15.4595 13.8572 15.1124 14.298 14.6368 14.6414Z" stroke="none"/>
+                        </svg>
+                        <span class="text-lg font-semibold text-gray-200 group-hover:text-white transition-colors duration-300">Get Pair Code</span>
+                    </button>
+                    <a href="https://github.com/FNG-ARYAN" target="_blank" class="option-card flex flex-col items-center p-6 bg-gray-700 rounded-xl hover:bg-blue-600 group">
+                        <svg class="w-16 h-16 mb-4 text-blue-400 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0a12 12 0 0 0-3.8 23.3A12 12 0 0 0 12 24c5.7 0 10.3-4.6 10.3-10.3S17.7 2.3 12 2.3zm0 20.6c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm4.3-8.8c.2-.2.2-.5 0-.7L12.7 8.3c-.2-.2-.5-.2-.7 0s-.2.5 0 .7l3.6 3.6c.2.2.5.2.7 0zM7 11.5c-.3 0-.5.2-.5.5s.2.5.5.5h.5v.5c0 .3.2.5.5.5s.5-.2.5-.5v-.5h.5c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-.5v-.5c0-.3-.2-.5-.5-.5s-.5.2-.5.5v.5H7z"/>
+                        </svg>
+                        <span class="text-lg font-semibold text-gray-200 group-hover:text-white transition-colors duration-300">Bot Repo</span>
+                    </a>
+                    <a href="https://chat.whatsapp.com/" target="_blank" class="option-card flex flex-col items-center p-6 bg-gray-700 rounded-xl hover:bg-green-600 group">
+                        <svg class="w-16 h-16 mb-4 text-green-400 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.0007 2.00008C6.48625 2.00008 2.00073 6.48559 2.00073 12.0001C2.00073 13.7844 2.45664 15.4859 3.26442 17.0001L2.00073 22.0001L7.10899 20.7513C8.61863 21.503 10.2801 22.0001 12.0007 22.0001C17.5152 22.0001 22.0007 17.5146 22.0007 12.0001C22.0007 6.48559 17.5152 2.00008 12.0007 2.00008ZM16.4952 14.7397C16.3217 15.0001 16.1482 15.2605 15.9747 15.5209C15.7505 15.8643 15.5264 16.2077 15.3023 16.5511C15.0211 16.8945 14.6294 17.1549 14.1537 17.3486C13.6781 17.5423 13.1165 17.6391 12.5549 17.6391C11.9933 17.6391 11.4317 17.6391 10.8701 17.5423C10.3085 17.4455 9.74693 17.2046 9.27129 16.8612C8.79565 16.5178 8.40393 16.077 8.01221 15.5346C7.62049 14.9922 7.33932 14.3481 7.16584 13.7041C6.9417 13.1617 6.71756 12.5176 6.71756 11.8736C6.71756 11.2295 6.71756 10.5855 7.00696 9.94145C7.29636 9.29742 7.74205 8.75501 8.21769 8.31422C8.69333 7.87342 9.16901 7.63255 9.73057 7.53572C10.2921 7.43888 10.8537 7.43888 11.4153 7.53572C11.9768 7.63255 12.5384 7.77727 13.0141 8.01815C13.4897 8.25902 13.9846 8.59998 14.4602 8.94332C14.9358 9.28666 15.2829 9.68261 15.5723 10.1706C15.8617 10.6585 16.0352 11.1916 16.0352 11.7247C16.0352 12.2578 15.9181 12.7909 15.6888 13.324C15.4595 13.8572 15.1124 14.298 14.6368 14.6414Z" stroke="none"/>
+                        </svg>
+                        <span class="text-lg font-semibold text-gray-200 group-hover:text-white transition-colors duration-300">WhatsApp Group</span>
+                    </button>
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
+        
+        <div id="paircodePage" class="hidden w-full max-w-md space-y-8 bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 text-center relative">
+            
+            <button onclick="showPage('homePage')" class="absolute top-4 left-4 text-gray-400 hover:text-white transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+            </button>
+            
+            <div class="space-y-4 animate-fadeIn">
+                <h2 class="text-4xl font-extrabold text-green-400 tracking-wide">paircode</h2>
+                <p class="text-gray-400 text-lg">Enter your phone number to generate a pair code.</p>
+            </div>
+
+            <form id="pairCodeForm" class="space-y-6">
+                <input type="text" id="phoneNumberInput" placeholder="8801xxxxxxxxx" required
+                    class="w-full px-5 py-3 rounded-xl bg-gray-700 border border-gray-600 focus:ring-2 focus:ring-green-500 focus:outline-none transition-all duration-500 transform focus:scale-105">
+                
+                <button type="submit"
+                    class="w-full py-3 bg-gradient-to-r from-green-600 to-teal-600 rounded-xl font-semibold text-lg hover:from-green-700 hover:to-teal-700 transition-all duration-500 transform hover:scale-105 relative">
+                    <span id="buttonText">Get Pair Code</span>
+                    <svg id="buttonSpinner" class="hidden absolute left-1/2 top-1/2 -ml-4 -mt-4 h-8 w-8 text-white spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+            
+            <div id="pairCodeDisplay" class="hidden space-y-4 animate-slideInUp" style="animation-delay: 0.8s;">
+                <p class="text-gray-400 text-sm">Scan the QR code or enter the pair code.</p>
+                <div id="qrCodeImage" class="flex justify-center mb-4 transition-transform duration-500 transform hover:scale-110"></div>
+                <div class="space-y-2">
+                    <h3 class="text-2xl font-bold text-green-400">Your Pair Code is:</h3>
+                    <p id="pairCodeText" class="text-5xl font-extrabold text-white tracking-wider animate-pulse"></p>
+                </div>
+            </div>
+            
+            <p id="errorMessage" class="text-center text-red-400 font-medium hidden"></p>
+        </div>
+    </main>
+
+    <footer class="mt-8 text-center text-gray-500 text-sm animate-fadeIn" style="animation-delay: 1.5s;">
+        <p>Powered by Aryan © 2025 All Rights Reserved</p>
+    </footer>
+
     <script>
+        // Function to switch between pages
+        function showPage(pageId) {
+            const pages = ['homePage', 'paircodePage'];
+            pages.forEach(id => {
+                const page = document.getElementById(id);
+                if (id === pageId) {
+                    page.classList.remove('hidden');
+                } else {
+                    page.classList.add('hidden');
+                }
+            });
+        }
+
         const form = document.getElementById('pairCodeForm');
         const phoneNumberInput = document.getElementById('phoneNumberInput');
         const pairCodeDisplay = document.getElementById('pairCodeDisplay');
         const pairCodeText = document.getElementById('pairCodeText');
+        const errorMessage = document.getElementById('errorMessage');
+        const buttonText = document.getElementById('buttonText');
+        const buttonSpinner = document.getElementById('buttonSpinner');
+        const qrCodeImage = document.getElementById('qrCodeImage');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            buttonText.textContent = 'Generating...';
+            buttonSpinner.classList.remove('hidden');
+            document.querySelector('button[type="submit"]').disabled = true;
+
+            pairCodeDisplay.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            qrCodeImage.innerHTML = '';
+
             const phoneNumber = phoneNumberInput.value.trim();
-            if (phoneNumber) {
-                const response = await fetch('/api/generate-paircode', {
+            if (!phoneNumber) {
+                showError('Please enter a phone number.');
+                buttonText.textContent = 'Get Pair Code';
+                buttonSpinner.classList.add('hidden');
+                document.querySelector('button[type="submit"]').disabled = false;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/paircode', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phoneNumber })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phoneNumber })
                 });
-                
-                const data = await response.json();
-                if (data.pairCode) {
-                    pairCodeText.textContent = data.pairCode;
-                    pairCodeDisplay.style.display = 'block';
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    pairCodeText.textContent = result.pairCode;
+                    pairCodeDisplay.classList.remove('hidden');
                 } else {
-                    alert('Failed to get pair code. ' + (data.error || ''));
+                    showError(result.error || 'Failed to get pair code. Please try again.');
                 }
+            } catch (error) {
+                console.error('API Error:', error);
+                showError('An unexpected error occurred. Please check your connection.');
+            } finally {
+                buttonText.textContent = 'Get Pair Code';
+                buttonSpinner.classList.add('hidden');
+                document.querySelector('button[type="submit"]').disabled = false;
             }
         });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
