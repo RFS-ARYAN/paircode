@@ -13,6 +13,11 @@ const sessionPath = path.join('/tmp', 'cookies');
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// New route to serve paircode.html at the root URL
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'paircode.html'));
+});
+
 // API: Generate Pair Code
 app.post('/api/paircode', async (req, res) => {
     const { phoneNumber } = req.body;
